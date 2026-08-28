@@ -13,7 +13,7 @@ fn test_apt_update() {
     };
     let cfg = Config::default();
     let res = translate(&ctx, &cfg);
-    assert_eq!(res.command, "sudo pacman -Sy");
+    assert_eq!(res.command, "paru -Sy");
 }
 
 #[test]

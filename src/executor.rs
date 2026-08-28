@@ -42,9 +42,14 @@ impl Executor {
                 Err(e) => Err(format!("Failed to execute command as {}: {}", user, e)),
             }
         } else {
-            let parts: Vec<&str> = res.command.split_whitespace().collect();
+            let mut parts: Vec<&str> = res.command.split_whitespace().collect();
             if parts.is_empty() {
                 return Ok(());
+            }
+
+            // Strip redundant leading 'sudo' if already running as root
+            if is_root && parts[0] == "sudo" && parts.len() > 1 {
+                parts.remove(0);
             }
 
             let binary = parts[0];

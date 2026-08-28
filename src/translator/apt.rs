@@ -42,10 +42,10 @@ pub fn translate_apt(raw_args: &[String], config: &Config) -> TranslationResult 
 
     match subcmd.as_str() {
         "update" | "upd" => TranslationResult {
-            command: "sudo pacman -Sy".to_string(),
+            command: if helper == "pacman" { "sudo pacman -Sy".to_string() } else { format!("{} -Sy", helper) },
             args: vec!["-Sy".to_string()],
-            needs_root: true,
-            needs_aur: false,
+            needs_root: helper == "pacman",
+            needs_aur: helper != "pacman",
             notes_en: "Updates local package database mirrors.".to_string(),
             notes_fa: "به‌روزرسانی لیست و پایگاه‌داده بسته‌ها.".to_string(),
             warning: None,
