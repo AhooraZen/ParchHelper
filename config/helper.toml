@@ -1,0 +1,22 @@
+# Parch Linux Command Helper Configuration
+# Default path: /etc/parch/helper.toml or ~/.config/parch/helper.toml
+
+[general]
+# Preferred AUR helper: "paru" | "yay" | "pacman"
+helper = "paru"
+
+# Language mode: "both" (EN+FA) | "en" | "fa" | "auto"
+language = "both"
+
+# Auto-execute without confirmation prompt
+auto_execute = false
+
+# Show colored UI box
+colored_ui = true
+
+# Check AUR automatically if package not found in official repos
+aur_fallback = true
+
+[package_overrides]
+# Custom package mappings (overrides built-in dictionary)
+# "debian-pkg-name" = "arch-pkg-name"
