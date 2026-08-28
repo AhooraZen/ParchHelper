@@ -16,11 +16,11 @@ impl BoxRenderer {
         let width: usize = 76;
 
         let top_border = format!(
-            "╭─ {} {} {} {}",
-            Theme::logo_bracket("["),
+            "╭─── {} {} {} {}",
+            Theme::logo_bracket("❬"),
             Theme::title("Parch Linux Command Helper"),
-            Theme::logo_bracket("]"),
-            Theme::border(&"─".repeat(width.saturating_sub(36)))
+            Theme::logo_bracket("❭"),
+            Theme::border(&"─".repeat(width.saturating_sub(38)))
         );
         let bot_border = format!("╰{}╯", "─".repeat(width));
 
