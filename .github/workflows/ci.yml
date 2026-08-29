@@ -12,6 +12,8 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
 
 jobs:
   code-quality:
@@ -26,27 +28,19 @@ jobs:
         with:
           components: clippy, rustfmt
 
-      - name: Cache cargo dependencies
-        uses: actions/cache@v4
+      - name: Enable Rust Cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          cache-all-targets: "true"
 
       - name: Verify Formatting (rustfmt)
         run: cargo fmt --all -- --check
 
       - name: Run Linter (clippy)
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --all-features
 
       - name: Execute Unit & Integration Tests
-        run: cargo test --all-targets --verbose
+        run: cargo test --all-targets
 
   build-matrix:
     name: Multi-Arch Build (${{ matrix.target }})
@@ -71,17 +65,11 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Cache cargo build artifacts
-        uses: actions/cache@v4
+      - name: Enable Rust Cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-build-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ matrix.target }}-
+          key: ${{ matrix.target }}
+          cache-all-targets: "true"
 
       - name: Install cross-compilation tools
         if: matrix.use_cross
@@ -179,6 +167,7 @@ jobs:
           generate_release_notes: true
           files: |
             release-assets/*
+            CHANGELOG.md
             config/helper.toml
             shell/parch-helper.sh
             shell/parch-helper.zsh
@@ -196,11 +185,14 @@ jobs:
             ```bash
             curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sudo bash
             ```
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed version history.
           draft: false
           prerelease: false
           generate_release_notes: true
           files: |
             release-assets/*
+            CHANGELOG.md
             config/helper.toml
             shell/parch-helper.sh
             shell/parch-helper.zsh
