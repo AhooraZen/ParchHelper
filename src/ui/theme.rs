@@ -85,20 +85,32 @@ impl Theme {
 
     pub fn badge_en(style: ThemeStyle) -> String {
         match style {
-            ThemeStyle::Neon => "\x1b[38;5;39m❬\x1b[1;38;5;51mEN\x1b[0;38;5;39m❭\x1b[0m".to_string(),
-            ThemeStyle::ParchDark => "\x1b[38;5;201m❬\x1b[1;38;5;51mEN\x1b[0;38;5;201m❭\x1b[0m".to_string(),
+            ThemeStyle::Neon => {
+                "\x1b[38;5;39m❬\x1b[1;38;5;51mEN\x1b[0;38;5;39m❭\x1b[0m".to_string()
+            }
+            ThemeStyle::ParchDark => {
+                "\x1b[38;5;201m❬\x1b[1;38;5;51mEN\x1b[0;38;5;201m❭\x1b[0m".to_string()
+            }
             ThemeStyle::Minimal => "\x1b[1;38;5;231m[EN]\x1b[0m".to_string(),
-            ThemeStyle::Monokai => "\x1b[38;5;141m❬\x1b[1;38;5;81mEN\x1b[0;38;5;141m❭\x1b[0m".to_string(),
+            ThemeStyle::Monokai => {
+                "\x1b[38;5;141m❬\x1b[1;38;5;81mEN\x1b[0;38;5;141m❭\x1b[0m".to_string()
+            }
             ThemeStyle::Plain => "[EN]".to_string(),
         }
     }
 
     pub fn badge_fa(style: ThemeStyle) -> String {
         match style {
-            ThemeStyle::Neon => "\x1b[38;5;39m❬\x1b[1;38;5;48mFA\x1b[0;38;5;39m❭\x1b[0m".to_string(),
-            ThemeStyle::ParchDark => "\x1b[38;5;201m❬\x1b[1;38;5;220mFA\x1b[0;38;5;201m❭\x1b[0m".to_string(),
+            ThemeStyle::Neon => {
+                "\x1b[38;5;39m❬\x1b[1;38;5;48mFA\x1b[0;38;5;39m❭\x1b[0m".to_string()
+            }
+            ThemeStyle::ParchDark => {
+                "\x1b[38;5;201m❬\x1b[1;38;5;220mFA\x1b[0;38;5;201m❭\x1b[0m".to_string()
+            }
             ThemeStyle::Minimal => "\x1b[1;38;5;231m[FA]\x1b[0m".to_string(),
-            ThemeStyle::Monokai => "\x1b[38;5;141m❬\x1b[1;38;5;220mFA\x1b[0;38;5;141m❭\x1b[0m".to_string(),
+            ThemeStyle::Monokai => {
+                "\x1b[38;5;141m❬\x1b[1;38;5;220mFA\x1b[0;38;5;141m❭\x1b[0m".to_string()
+            }
             ThemeStyle::Plain => "[FA]".to_string(),
         }
     }

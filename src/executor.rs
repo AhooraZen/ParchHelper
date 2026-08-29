@@ -13,7 +13,9 @@ impl Executor {
             eprintln!(
                 "\n\x1b[1;38;5;196m[!] CRITICAL ERROR: Root filesystem (/) is mounted READ-ONLY.\x1b[0m"
             );
-            eprintln!("\x1b[38;5;196m[!] خطا: فایل‌سیستم ریشه به صورت فقط-خواندنی سوار شده است.\x1b[0m\n");
+            eprintln!(
+                "\x1b[38;5;196m[!] خطا: فایل‌سیستم ریشه به صورت فقط-خواندنی سوار شده است.\x1b[0m\n"
+            );
             return Err("Aborted: read-only root mount.".to_string());
         }
 
