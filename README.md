@@ -62,6 +62,11 @@ Pulls the latest pre-compiled multi-arch binary release from GitHub:
 curl -sSL https://raw.githubusercontent.com/AhooraZen/ParchHelper/main/install.sh | bash
 ```
 
+To uninstall:
+```bash
+curl -sSL https://raw.githubusercontent.com/AhooraZen/ParchHelper/main/uninstall.sh | bash
+```
+
 ### Method 2: Standard Makefile Build (Packagers & Developers)
 Conforms to standard GNU/FHS packaging conventions (`DESTDIR`, `PREFIX`):
 ```bash
