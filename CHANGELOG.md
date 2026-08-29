@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-08-29
 
 ### 🚀 Added
+- **Matching Neon Uninstaller**: Added `uninstall.sh` with identical 256-color neon styling for clean removal of binaries, symlinks, configuration, and shell hooks.
 - **Dynamic Release Notes & Rolling CI**: Multi-arch CI pipeline with automated changelog generation, commit metadata, and SHA256 checksums.
 - **Sleek Bracketed Neon Badges**: Redesigned `❬EN❭` and `❬FA❭` badges to eliminate solid box artifacts and match installer aesthetic.
 - **OSC-52 Terminal Clipboard Support**: Instant clipboard copy via `c` key during interactive prompts (works seamlessly across SSH and tmux).
