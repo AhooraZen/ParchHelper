@@ -129,6 +129,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -142,19 +144,39 @@ jobs:
           sha256sum parch-helper-*.tar.gz > SHA256SUMS
           cat SHA256SUMS
 
+      - name: Compute Release Metadata
+        id: meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_TITLE=$(git log -1 --pretty=%s)
+          COMMIT_DATE=$(git log -1 --date=format:'%Y-%m-%d %H:%M UTC' --pretty=%cd)
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "commit_title=${COMMIT_TITLE}" >> $GITHUB_OUTPUT
+          echo "commit_date=${COMMIT_DATE}" >> $GITHUB_OUTPUT
+
       - name: Publish Rolling Latest Release (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "ParchHelper (Rolling Release)"
+          target_commitish: ${{ github.sha }}
+          name: "ParchHelper (${{ steps.meta.outputs.short_sha }}) • ${{ steps.meta.outputs.commit_date }}"
           body: |
-            Automated production build for Parch Linux and Arch-based systems.
+            ### ⚡ Rolling Build (`${{ steps.meta.outputs.short_sha }}`)
+            - **Commit:** `${{ github.sha }}`
+            - **Summary:** ${{ steps.meta.outputs.commit_title }}
+            - **Built on:** ${{ steps.meta.outputs.commit_date }}
 
-            ### SHA256 Checksums
-            See attached `SHA256SUMS` file.
+            ### 📦 Quick Install
+            ```bash
+            curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sudo bash
+            ```
+
+            ### 🛡️ Verification
+            See attached `SHA256SUMS` file for sha256 checksums.
           draft: false
           prerelease: false
+          generate_release_notes: true
           files: |
             release-assets/*
             config/helper.toml
@@ -170,12 +192,13 @@ jobs:
           body: |
             Official release for Parch Linux.
 
-            ### Installation
+            ### 📦 Installation
             ```bash
             curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sudo bash
             ```
           draft: false
           prerelease: false
+          generate_release_notes: true
           files: |
             release-assets/*
             config/helper.toml
