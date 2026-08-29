@@ -1,41 +1,49 @@
 PREFIX ?= /usr
+BINDIR ?= $(PREFIX)/bin
+SYSCONFDIR ?= /etc
+DATADIR ?= $(PREFIX)/share
 DESTDIR ?=
 
-# Auto-detect sudo requirement for installation phase only
-SUDO := $(shell if [ "$$(id -u)" -ne 0 ]; then which sudo 2>/dev/null; fi)
+CARGO ?= cargo
+CARGO_FLAGS ?= --release
 
 all: build
 
 build:
-	cargo build --release
+	$(CARGO) build $(CARGO_FLAGS)
+
+check:
+	$(CARGO) check
+	$(CARGO) clippy -- -D warnings
 
 test:
-	cargo test
+	$(CARGO) test
 
-# install target does NOT depend on build rule to prevent root from re-invoking cargo
 install:
-	@if [ ! -f target/release/parch-helper ]; then \
-		echo "Binary target/release/parch-helper not found! Running build as current user..."; \
-		cargo build --release; \
-	fi
-	$(SUDO) install -Dm755 target/release/parch-helper $(DESTDIR)$(PREFIX)/bin/parch-helper
-	$(SUDO) ln -sf $(PREFIX)/bin/parch-helper $(DESTDIR)$(PREFIX)/bin/parch-translate
-	$(SUDO) mkdir -p $(DESTDIR)/etc/parch
-	@if [ ! -f $(DESTDIR)/etc/parch/helper.toml ]; then \
-		$(SUDO) install -Dm644 config/helper.toml $(DESTDIR)/etc/parch/helper.toml; \
-	fi
-	$(SUDO) install -Dm644 shell/parch-helper.sh $(DESTDIR)/etc/profile.d/parch-helper.sh
-	$(SUDO) install -Dm644 shell/parch-helper.zsh $(DESTDIR)$(PREFIX)/share/zsh/site-functions/parch-helper.zsh
-	$(SUDO) install -Dm644 shell/parch-helper.fish $(DESTDIR)$(PREFIX)/share/fish/vendor_conf.d/parch-helper.fish
-	@echo "Creating symlinks for foreign package managers in $(DESTDIR)$(PREFIX)/bin/..."
+	install -Dm755 target/release/parch-helper $(DESTDIR)$(BINDIR)/parch-helper
+	ln -sf parch-helper $(DESTDIR)$(BINDIR)/parch-translate
+	install -Dm644 config/helper.toml $(DESTDIR)$(SYSCONFDIR)/parch/helper.toml
+	install -Dm644 shell/parch-helper.sh $(DESTDIR)$(SYSCONFDIR)/profile.d/parch-helper.sh
+	install -Dm644 shell/parch-helper.zsh $(DESTDIR)$(DATADIR)/zsh/site-functions/parch-helper.zsh
+	install -Dm644 shell/parch-helper.fish $(DESTDIR)$(DATADIR)/fish/vendor_conf.d/parch-helper.fish
 	@for cmd in apt apt-get apt-cache aptitude dnf yum apk zypper brew dpkg rpm flatpak snap; do \
-		if [ ! -f "$(DESTDIR)$(PREFIX)/bin/$$cmd" ] || [ -L "$(DESTDIR)$(PREFIX)/bin/$$cmd" ]; then \
-			$(SUDO) ln -sf $(PREFIX)/bin/parch-helper $(DESTDIR)$(PREFIX)/bin/$$cmd; \
+		ln -sf parch-helper $(DESTDIR)$(BINDIR)/$$cmd; \
+	done
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/parch-helper
+	rm -f $(DESTDIR)$(BINDIR)/parch-translate
+	rm -f $(DESTDIR)$(SYSCONFDIR)/parch/helper.toml
+	rm -f $(DESTDIR)$(SYSCONFDIR)/profile.d/parch-helper.sh
+	rm -f $(DESTDIR)$(DATADIR)/zsh/site-functions/parch-helper.zsh
+	rm -f $(DESTDIR)$(DATADIR)/fish/vendor_conf.d/parch-helper.fish
+	@for cmd in apt apt-get apt-cache aptitude dnf yum apk zypper brew dpkg rpm flatpak snap; do \
+		if [ -L "$(DESTDIR)$(BINDIR)/$$cmd" ]; then \
+			rm -f "$(DESTDIR)$(BINDIR)/$$cmd"; \
 		fi \
 	done
-	@echo "Installation complete!"
 
 clean:
-	cargo clean
+	$(CARGO) clean
 
-.PHONY: all build test install clean
+.PHONY: all build check test install uninstall clean

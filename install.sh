@@ -2,8 +2,23 @@
 set -e
 
 REPO="AhooraZen/ParchHelper"
-RELEASE_URL="https://github.com/${REPO}/releases/download/latest/parch-helper-x86_64.tar.gz"
-BINARY_FALLBACK_URL="https://github.com/${REPO}/releases/download/latest/parch-helper-x86_64"
+ARCH="$(uname -m)"
+
+case "$ARCH" in
+    x86_64|amd64)
+        TARGET_ARCH="x86_64"
+        ;;
+    aarch64|arm64)
+        TARGET_ARCH="aarch64"
+        ;;
+    *)
+        echo "[!] Unsupported architecture: $ARCH. Will attempt local cargo build."
+        TARGET_ARCH=""
+        ;;
+esac
+
+RELEASE_URL="https://github.com/${REPO}/releases/download/latest/parch-helper-${TARGET_ARCH}.tar.gz"
+BINARY_URL="https://github.com/${REPO}/releases/download/latest/parch-helper-${TARGET_ARCH}"
 
 echo "====================================================="
 echo "   Parch Linux Command Helper - Fast Installer"
@@ -17,34 +32,39 @@ trap cleanup EXIT
 
 INSTALLED_SUCCESS=0
 
-# Step 1: Attempt to download pre-built release artifact from GitHub Releases
-echo "==> Fetching latest pre-built release from ${REPO}..."
-if command -v curl >/dev/null 2>&1; then
-    DOWNLOAD_CMD="curl -sSL"
-elif command -v wget >/dev/null 2>&1; then
-    DOWNLOAD_CMD="wget -qO-"
-else
-    echo "[!] Neither curl nor wget found. Falling back to local source build..."
-    DOWNLOAD_CMD=""
-fi
-
-if [ -n "$DOWNLOAD_CMD" ]; then
-    if curl -sSfL "$RELEASE_URL" -o "$TEMP_DIR/release.tar.gz" 2>/dev/null; then
-        echo "==> Extracting release archive..."
-        tar -xzf "$TEMP_DIR/release.tar.gz" -C "$TEMP_DIR"
-        INSTALLED_SUCCESS=1
-    elif curl -sSfL "$BINARY_FALLBACK_URL" -o "$TEMP_DIR/parch-helper" 2>/dev/null; then
-        echo "==> Downloaded binary directly..."
-        chmod +x "$TEMP_DIR/parch-helper"
-        mkdir -p "$TEMP_DIR/usr/bin"
-        cp "$TEMP_DIR/parch-helper" "$TEMP_DIR/usr/bin/"
-        INSTALLED_SUCCESS=1
+# Step 1: Download latest pre-compiled release from GitHub Actions
+if [ -n "$TARGET_ARCH" ]; then
+    echo "==> Fetching latest release for ${TARGET_ARCH} from ${REPO}..."
+    if command -v curl >/dev/null 2>&1; then
+        if curl -sSfL "$RELEASE_URL" -o "$TEMP_DIR/release.tar.gz" 2>/dev/null; then
+            echo "==> Extracting release archive..."
+            tar -xzf "$TEMP_DIR/release.tar.gz" -C "$TEMP_DIR"
+            INSTALLED_SUCCESS=1
+        elif curl -sSfL "$BINARY_URL" -o "$TEMP_DIR/parch-helper" 2>/dev/null; then
+            echo "==> Downloaded binary directly..."
+            chmod +x "$TEMP_DIR/parch-helper"
+            mkdir -p "$TEMP_DIR/usr/bin"
+            cp "$TEMP_DIR/parch-helper" "$TEMP_DIR/usr/bin/"
+            INSTALLED_SUCCESS=1
+        fi
+    elif command -v wget >/dev/null 2>&1; then
+        if wget -q "$RELEASE_URL" -O "$TEMP_DIR/release.tar.gz" 2>/dev/null; then
+            echo "==> Extracting release archive..."
+            tar -xzf "$TEMP_DIR/release.tar.gz" -C "$TEMP_DIR"
+            INSTALLED_SUCCESS=1
+        elif wget -q "$BINARY_URL" -O "$TEMP_DIR/parch-helper" 2>/dev/null; then
+            echo "==> Downloaded binary directly..."
+            chmod +x "$TEMP_DIR/parch-helper"
+            mkdir -p "$TEMP_DIR/usr/bin"
+            cp "$TEMP_DIR/parch-helper" "$TEMP_DIR/usr/bin/"
+            INSTALLED_SUCCESS=1
+        fi
     fi
 fi
 
-# Step 2: Fallback to local cargo build if download failed
+# Step 2: Fallback to local source compilation if download failed
 if [ "$INSTALLED_SUCCESS" -ne 1 ]; then
-    echo "==> Release binary not available online. Building from source with cargo..."
+    echo "==> Pre-built binary not found or offline. Building from source via cargo..."
     if ! command -v cargo >/dev/null 2>&1; then
         echo "[-] Error: cargo is required to build from source but was not found." >&2
         exit 1
@@ -61,11 +81,11 @@ if [ "$INSTALLED_SUCCESS" -ne 1 ]; then
     cp "shell/parch-helper.fish" "$TEMP_DIR/usr/share/fish/vendor_conf.d/"
 fi
 
-# Step 3: Auto-elevate with sudo only at installation
+# Step 3: Elevation check for file deployment
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
     SUDO="sudo"
-    echo "==> Elevating privileges to install system components..."
+    echo "==> Elevating privileges with sudo to install system files..."
 fi
 
 echo "==> Installing binary to /usr/bin/parch-helper..."
@@ -103,7 +123,7 @@ elif [ -f "shell/parch-helper.fish" ]; then
     $SUDO cp "shell/parch-helper.fish" "/usr/share/fish/vendor_conf.d/parch-helper.fish"
 fi
 
-echo "==> Creating command wrappers for seamless distro emulation..."
+echo "==> Creating seamless command symlinks..."
 for cmd in apt apt-get apt-cache aptitude dnf yum apk zypper brew dpkg rpm flatpak snap; do
     if [ ! -f "/usr/bin/$cmd" ] || [ -L "/usr/bin/$cmd" ]; then
         $SUDO ln -sf "/usr/bin/parch-helper" "/usr/bin/$cmd"

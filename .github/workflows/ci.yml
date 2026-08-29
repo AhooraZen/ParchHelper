@@ -1,4 +1,4 @@
-name: CI & Release
+name: CI & Release Pipeline
 
 on:
   push:
@@ -10,77 +10,174 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  check-test:
-    name: Lint & Test
+  code-quality:
+    name: Code Quality & Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Rust
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
 
-      - name: Rustfmt Check
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Verify Formatting (rustfmt)
         run: cargo fmt --all -- --check
 
-      - name: Clippy Check
-        run: cargo clippy -- -D warnings
+      - name: Run Linter (clippy)
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Run Tests
-        run: cargo test --verbose
+      - name: Execute Unit & Integration Tests
+        run: cargo test --all-targets --verbose
 
-  release:
-    name: Build & Publish Release
-    needs: check-test
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push' && github.ref == 'refs/heads/main'
+  build-matrix:
+    name: Multi-Arch Build (${{ matrix.target }})
+    needs: code-quality
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            arch_name: x86_64
+            use_cross: false
+          - target: aarch64-unknown-linux-gnu
+            arch_name: aarch64
+            use_cross: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-build-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ matrix.target }}-
+
+      - name: Install cross-compilation tools
+        if: matrix.use_cross
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+
+      - name: Build Binary (Native / Cross)
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package Distro Artifacts
+        run: |
+          PKG_DIR="pkg-${{ matrix.arch_name }}"
+          mkdir -p "${PKG_DIR}/usr/bin" "${PKG_DIR}/etc/parch" "${PKG_DIR}/etc/profile.d" \
+                   "${PKG_DIR}/usr/share/zsh/site-functions" "${PKG_DIR}/usr/share/fish/vendor_conf.d"
+
+          cp "target/${{ matrix.target }}/release/parch-helper" "${PKG_DIR}/usr/bin/"
+          cp "config/helper.toml" "${PKG_DIR}/etc/parch/"
+          cp "shell/parch-helper.sh" "${PKG_DIR}/etc/profile.d/"
+          cp "shell/parch-helper.zsh" "${PKG_DIR}/usr/share/zsh/site-functions/"
+          cp "shell/parch-helper.fish" "${PKG_DIR}/usr/share/fish/vendor_conf.d/"
+
+          tar -czf "parch-helper-${{ matrix.arch_name }}.tar.gz" -C "${PKG_DIR}" .
+          cp "target/${{ matrix.target }}/release/parch-helper" "parch-helper-${{ matrix.arch_name }}"
+          sha256sum "parch-helper-${{ matrix.arch_name }}.tar.gz" > "parch-helper-${{ matrix.arch_name }}.tar.gz.sha256"
+          sha256sum "parch-helper-${{ matrix.arch_name }}" > "parch-helper-${{ matrix.arch_name }}.sha256"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.arch_name }}
+          path: |
+            parch-helper-${{ matrix.arch_name }}.tar.gz
+            parch-helper-${{ matrix.arch_name }}.tar.gz.sha256
+            parch-helper-${{ matrix.arch_name }}
+            parch-helper-${{ matrix.arch_name }}.sha256
+
+  publish-release:
+    name: Publish Release Assets
+    needs: build-matrix
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
 
-      - name: Build Optimized Release Binary
-        run: cargo build --release
-
-      - name: Package Release Tarball
+      - name: Generate Global SHA256 Checksums
         run: |
-          mkdir -p package/usr/bin package/etc/parch package/etc/profile.d package/usr/share/zsh/site-functions package/usr/share/fish/vendor_conf.d
-          cp target/release/parch-helper package/usr/bin/
-          cp config/helper.toml package/etc/parch/
-          cp shell/parch-helper.sh package/etc/profile.d/
-          cp shell/parch-helper.zsh package/usr/share/zsh/site-functions/
-          cp shell/parch-helper.fish package/usr/share/fish/vendor_conf.d/
-          tar -czf parch-helper-x86_64.tar.gz -C package .
-          cp target/release/parch-helper parch-helper-x86_64
+          cd release-assets
+          sha256sum parch-helper-*.tar.gz > SHA256SUMS
+          cat SHA256SUMS
 
-      - name: Create or Update Rolling Latest Release
+      - name: Publish Rolling Latest Release (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: ParchHelper Rolling Latest Release
+          name: "ParchHelper (Rolling Release)"
+          body: |
+            Automated production build for Parch Linux and Arch-based systems.
+
+            ### SHA256 Checksums
+            See attached `SHA256SUMS` file.
           draft: false
           prerelease: false
           files: |
-            parch-helper-x86_64.tar.gz
-            parch-helper-x86_64
+            release-assets/*
             config/helper.toml
             shell/parch-helper.sh
             shell/parch-helper.zsh
             shell/parch-helper.fish
 
-      - name: Publish Version Tagged Release
+      - name: Publish Tagged Version Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          name: "ParchHelper ${{ github.ref_name }}"
+          body: |
+            Official release for Parch Linux.
+
+            ### Installation
+            ```bash
+            curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sudo bash
+            ```
           draft: false
           prerelease: false
           files: |
-            parch-helper-x86_64.tar.gz
-            parch-helper-x86_64
+            release-assets/*
             config/helper.toml
             shell/parch-helper.sh
             shell/parch-helper.zsh

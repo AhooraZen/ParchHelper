@@ -54,6 +54,30 @@
 
 ---
 
+## 📦 Installation Guide
+
+### Method 1: Fast One-Line Installer (Recommended)
+Pulls the latest pre-compiled multi-arch binary release from GitHub:
+```bash
+curl -sSL https://raw.githubusercontent.com/AhooraZen/ParchHelper/main/install.sh | bash
+```
+
+### Method 2: Standard Makefile Build (Packagers & Developers)
+Conforms to standard GNU/FHS packaging conventions (`DESTDIR`, `PREFIX`):
+```bash
+git clone https://github.com/AhooraZen/ParchHelper.git
+cd ParchHelper
+make
+sudo make install
+```
+
+For custom distribution prefixes:
+```bash
+make install DESTDIR=/tmp/pkg PREFIX=/usr SYSCONFDIR=/etc
+```
+
+---
+
 ## 🛠️ CLI Flags & Options
 
 ```text
@@ -105,11 +129,11 @@ bidi_isolation = true
 
 ---
 
-## 🧪 Testing & Verification
+## 🧪 Development & Testing
 
-Run tests with low-memory single-CPU flag:
 ```bash
-cargo test -j 1
+make check   # runs clippy and cargo check
+make test    # executes all unit and integration tests
 ```
 
 ---
