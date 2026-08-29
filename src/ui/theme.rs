@@ -10,7 +10,7 @@ pub enum ThemeStyle {
 }
 
 impl ThemeStyle {
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "neon" | "cyberpunk" => ThemeStyle::Neon,
             "dark" | "parch" | "parch-dark" => ThemeStyle::ParchDark,

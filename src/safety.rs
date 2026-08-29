@@ -191,7 +191,7 @@ impl SafetyGuard {
         }
 
         for target in targets {
-            let clean = target.split('/').last().unwrap_or(target);
+            let clean = target.split('/').next_back().unwrap_or(target);
             for critical in Self::CRITICAL_PACKAGES {
                 if clean == *critical || clean.starts_with(&format!("{}-", critical)) {
                     return DangerLevel::Blocked(format!(

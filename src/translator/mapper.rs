@@ -54,22 +54,22 @@ impl PkgMappings {
 
         // Heuristics for Debian packages:
         // lib<name>-dev -> <name>
-        if name.starts_with("lib") && name.ends_with("-dev") {
-            let inner = &name[3..name.len() - 4];
-            return inner.to_string();
+        if let Some(rest) = name.strip_prefix("lib") {
+            if let Some(inner) = rest.strip_suffix("-dev") {
+                return inner.to_string();
+            }
         }
         // <name>-dev -> <name>
-        if name.ends_with("-dev") {
-            let inner = &name[..name.len() - 4];
+        if let Some(inner) = name.strip_suffix("-dev") {
             return inner.to_string();
         }
         // python3-<name> -> python-<name>
-        if name.starts_with("python3-") {
-            return format!("python-{}", &name[8..]);
+        if let Some(stripped) = name.strip_prefix("python3-") {
+            return format!("python-{}", stripped);
         }
         // fonts-<name> -> ttf-<name>
-        if name.starts_with("fonts-") {
-            return format!("ttf-{}", &name[6..]);
+        if let Some(stripped) = name.strip_prefix("fonts-") {
+            return format!("ttf-{}", stripped);
         }
 
         name.to_string()
@@ -81,12 +81,11 @@ impl PkgMappings {
         }
 
         // <name>-devel -> <name>
-        if name.ends_with("-devel") {
-            let inner = &name[..name.len() - 6];
+        if let Some(inner) = name.strip_suffix("-devel") {
             return inner.to_string();
         }
-        if name.starts_with("python3-") {
-            return format!("python-{}", &name[8..]);
+        if let Some(stripped) = name.strip_prefix("python3-") {
+            return format!("python-{}", stripped);
         }
 
         name.to_string()
@@ -97,11 +96,10 @@ impl PkgMappings {
             return target.clone();
         }
 
-        if name.starts_with("py3-") {
-            return format!("python-{}", &name[4..]);
+        if let Some(stripped) = name.strip_prefix("py3-") {
+            return format!("python-{}", stripped);
         }
-        if name.ends_with("-dev") {
-            let inner = &name[..name.len() - 4];
+        if let Some(inner) = name.strip_suffix("-dev") {
             return inner.to_string();
         }
 
@@ -113,8 +111,7 @@ impl PkgMappings {
             return target.clone();
         }
 
-        if name.ends_with("-devel") {
-            let inner = &name[..name.len() - 6];
+        if let Some(inner) = name.strip_suffix("-devel") {
             return inner.to_string();
         }
 

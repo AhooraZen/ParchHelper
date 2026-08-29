@@ -18,7 +18,7 @@ impl BoxRenderer {
             .theme
             .as_deref()
             .unwrap_or(&config.general.theme);
-        let style = ThemeStyle::from_str(theme_str);
+        let style = ThemeStyle::parse(theme_str);
 
         if style == ThemeStyle::Plain {
             Self::render_plain(ctx, res, config);
@@ -26,11 +26,7 @@ impl BoxRenderer {
         }
 
         let layout = TerminalLayout::compute();
-        let input_cmd = format!(
-            "{} {}",
-            ctx.source.display_name(),
-            ctx.original_args.join(" ")
-        );
+        let input_cmd = format!("{} {}", ctx.source.display_name(), ctx.original_args.join(" "));
 
         let title = "Parch Linux Command Helper";
         let top_border = format!(
@@ -99,11 +95,7 @@ impl BoxRenderer {
     }
 
     fn render_plain(ctx: &InvocationContext, res: &TranslationResult, _config: &Config) {
-        let input_cmd = format!(
-            "{} {}",
-            ctx.source.display_name(),
-            ctx.original_args.join(" ")
-        );
+        let input_cmd = format!("{} {}", ctx.source.display_name(), ctx.original_args.join(" "));
         println!("\n==================================================");
         println!("Input:       {}", input_cmd);
         println!("Arch/Parch:  {}", res.command);
