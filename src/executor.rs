@@ -11,27 +11,27 @@ impl Executor {
     pub fn run(ctx: &InvocationContext, res: &TranslationResult) -> Result<(), String> {
         if let Ok(true) = SafetyGuard::check_readonly_fs("/") {
             eprintln!(
-                "\n\x1b[1;31m[!] CRITICAL ERROR: Root filesystem (/) is mounted READ-ONLY.\x1b[0m"
+                "\n\x1b[1;38;5;196m[!] CRITICAL ERROR: Root filesystem (/) is mounted READ-ONLY.\x1b[0m"
             );
-            eprintln!("\x1b[31m[!] خطا: فایل‌سیستم ریشه به صورت فقط-خواندنی سوار شده است.\x1b[0m\n");
+            eprintln!("\x1b[38;5;196m[!] خطا: فایل‌سیستم ریشه به صورت فقط-خواندنی سوار شده است.\x1b[0m\n");
             return Err("Aborted: read-only root mount.".to_string());
         }
 
         match SafetyGuard::check_pacman_lock() {
             LockStatus::LockedByProcess(pid, proc_name) => {
                 eprintln!(
-                    "\n\x1b[1;33m[!] Warning: Pacman database is locked by {} (PID {}).\x1b[0m\n",
+                    "\n\x1b[1;38;5;220m[!] Warning: Pacman database is locked by {} (PID {}).\x1b[0m\n",
                     proc_name, pid
                 );
             }
             LockStatus::StaleLock(pid) => {
                 eprintln!(
-                    "\n\x1b[1;33m[!] Notice: Found stale pacman lock file (/var/lib/pacman/db.lck, PID {} not running).\x1b[0m\n",
+                    "\n\x1b[1;38;5;220m[!] Notice: Found stale pacman lock file (/var/lib/pacman/db.lck, PID {} not running).\x1b[0m\n",
                     pid
                 );
             }
             LockStatus::LockedUnknown => {
-                eprintln!("\n\x1b[1;33m[!] Warning: Pacman lock file exists (/var/lib/pacman/db.lck).\x1b[0m\n");
+                eprintln!("\n\x1b[1;38;5;220m[!] Warning: Pacman lock file exists (/var/lib/pacman/db.lck).\x1b[0m\n");
             }
             LockStatus::NotLocked => {}
         }
@@ -39,7 +39,7 @@ impl Executor {
         let conflicting = SafetyGuard::get_active_conflicting_services();
         if !conflicting.is_empty() {
             eprintln!(
-                "\x1b[1;33m[!] Conflicting background services detected: {}\x1b[0m\n",
+                "\x1b[1;38;5;220m[!] Conflicting background services detected: {}\x1b[0m\n",
                 conflicting.join(", ")
             );
         }
@@ -58,13 +58,13 @@ impl Executor {
         match SafetyGuard::evaluate_command_safety(&binary, &args) {
             DangerLevel::Blocked(reason) => {
                 eprintln!(
-                    "\n\x1b[1;31m[!] DANGEROUS OPERATION BLOCKED: {}\x1b[0m\n",
+                    "\n\x1b[1;38;5;196m[!] DANGEROUS OPERATION BLOCKED: {}\x1b[0m\n",
                     reason
                 );
                 return Err("Execution aborted for system safety.".to_string());
             }
             DangerLevel::Warning(w) => {
-                eprintln!("\n\x1b[1;33m[!] WARNING: {}\x1b[0m\n", w);
+                eprintln!("\n\x1b[1;38;5;220m[!] WARNING: {}\x1b[0m\n", w);
             }
             DangerLevel::Safe => {}
         }
@@ -90,13 +90,13 @@ impl Executor {
         let orphans: Vec<&str> = orphans_str.split_whitespace().collect();
 
         if orphans.is_empty() {
-            println!("\x1b[1;32m✔ No orphaned packages found on system.\x1b[0m");
-            println!("\x1b[36m✔ هیچ پکیج یتیمی در سیستم پیدا نشد.\x1b[0m");
+            println!("\x1b[1;38;5;48m✔ No orphaned packages found on system.\x1b[0m");
+            println!("\x1b[38;5;51m✔ هیچ پکیج یتیمی در سیستم پیدا نشد.\x1b[0m");
             return Ok(());
         }
 
         println!(
-            "\x1b[1;33m[!] Found {} orphaned package(s): {}\x1b[0m\n",
+            "\x1b[1;38;5;220m[!] Found {} orphaned package(s): {}\x1b[0m\n",
             orphans.len(),
             orphans.join(" ")
         );

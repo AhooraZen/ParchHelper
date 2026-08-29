@@ -12,7 +12,7 @@ pub struct InteractivePrompt;
 
 impl InteractivePrompt {
     pub fn prompt(res: &TranslationResult) -> UserAction {
-        print!("\x1b[1;36m╭─▶ \x1b[1;37mExecute \x1b[1;32m`{}`\x1b[1;37m ? \x1b[1;33m[Enter/y: Run | c: Copy | e: Edit | q: Abort]\x1b[1;36m ❯ \x1b[0m", res.command);
+        print!("\x1b[38;5;51m╭─▶ \x1b[1;38;5;231mExecute \x1b[1;38;5;48m`{}`\x1b[1;38;5;231m ? \x1b[1;38;5;220m[Enter/y: Run | c: Copy | e: Edit | q: Abort]\x1b[38;5;51m ❯ \x1b[0m", res.command);
         stdout().flush().unwrap();
 
         if let Ok(()) = crossterm::terminal::enable_raw_mode() {
@@ -75,13 +75,13 @@ impl InteractivePrompt {
         let b64 = base64::engine::general_purpose::STANDARD.encode(text);
         print!("\x1b]52;c;{}\x07", b64);
         let _ = stdout().flush();
-        println!("\r\x1b[1;32m✔ Copied to clipboard via OSC-52!\x1b[0m");
-        print!("\x1b[1;36m╭─▶ \x1b[1;37mExecute ? \x1b[1;33m[Enter/y: Run | e: Edit | q: Abort]\x1b[1;36m ❯ \x1b[0m");
+        println!("\r\x1b[1;38;5;48m✔ Copied to clipboard via OSC-52!\x1b[0m");
+        print!("\x1b[38;5;51m╭─▶ \x1b[1;38;5;231mExecute ? \x1b[1;38;5;220m[Enter/y: Run | e: Edit | q: Abort]\x1b[38;5;51m ❯ \x1b[0m");
         let _ = stdout().flush();
     }
 
     fn prompt_edit(initial: &str) -> String {
-        print!("\x1b[1;33mEdit command:\x1b[0m ");
+        print!("\x1b[1;38;5;220mEdit command:\x1b[0m ");
         let _ = stdout().flush();
         let mut input = String::new();
         if std::io::stdin().read_line(&mut input).is_ok() {

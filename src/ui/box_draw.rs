@@ -34,16 +34,15 @@ impl BoxRenderer {
 
         let title = "Parch Linux Command Helper";
         let top_border = format!(
-            "╭─── {} {} {} {}",
-            Theme::logo_bracket("❬", style),
+            "╭─── {} {} {}",
+            Theme::logo_bracket("❬⚡❭", style),
             Theme::title(title, style),
-            Theme::logo_bracket("❭", style),
             Theme::border(&"─".repeat(layout.width.saturating_sub(38)), style)
         );
         let bot_border = format!("╰{}╯", "─".repeat(layout.width));
 
         println!();
-        println!("{}", Theme::border(&top_border, style));
+        println!("{}", top_border);
         println!("{}", Theme::border("│", style));
         println!(
             "{}   {:<12} : {}",

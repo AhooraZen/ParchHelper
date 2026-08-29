@@ -52,14 +52,14 @@ fn main() {
     BoxRenderer::render(&ctx, &res, &config);
 
     if cli_opts.dry_run || cli_opts.explain {
-        println!("\x1b[1;34mℹ Dry-run / Explain mode: skipping execution.\x1b[0m");
+        println!("\x1b[38;5;39mℹ Dry-run / Explain mode: skipping execution.\x1b[0m");
         return;
     }
 
     if config.general.auto_execute {
-        println!("\x1b[1;32m[+] Auto-executing command...\x1b[0m\n");
+        println!("\x1b[1;38;5;48m[+] Auto-executing command...\x1b[0m\n");
         if let Err(e) = Executor::run(&ctx, &res) {
-            eprintln!("\x1b[1;31m✖ Execution error: {}\x1b[0m", e);
+            eprintln!("\x1b[1;38;5;196m✖ Execution error: {}\x1b[0m", e);
             std::process::exit(1);
         }
         return;
@@ -80,14 +80,14 @@ fn main() {
                 }
             }
 
-            println!("\x1b[1;32m✔ Executing...\x1b[0m\n");
+            println!("\x1b[1;38;5;48m✔ Executing...\x1b[0m\n");
             if let Err(e) = Executor::run(&ctx, &res) {
-                eprintln!("\x1b[1;31m✖ Execution error: {}\x1b[0m", e);
+                eprintln!("\x1b[1;38;5;196m✖ Execution error: {}\x1b[0m", e);
                 std::process::exit(1);
             }
         }
         UserAction::Abort => {
-            println!("\x1b[1;33m⚠ Operation canceled by user.\x1b[0m");
+            println!("\x1b[1;38;5;220m⚠ Operation canceled by user.\x1b[0m");
         }
     }
 }
