@@ -35,7 +35,10 @@ impl InteractivePrompt {
                             let edited = Self::prompt_edit(&res.command);
                             return UserAction::Execute(edited);
                         }
-                        KeyCode::Char('q') | KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                        KeyCode::Char('q')
+                        | KeyCode::Char('n')
+                        | KeyCode::Char('N')
+                        | KeyCode::Esc => {
                             break UserAction::Abort;
                         }
                         _ => {}

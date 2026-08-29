@@ -10,7 +10,9 @@ pub struct Executor;
 impl Executor {
     pub fn run(ctx: &InvocationContext, res: &TranslationResult) -> Result<(), String> {
         if let Ok(true) = SafetyGuard::check_readonly_fs("/") {
-            eprintln!("\n\x1b[1;31m[!] CRITICAL ERROR: Root filesystem (/) is mounted READ-ONLY.\x1b[0m");
+            eprintln!(
+                "\n\x1b[1;31m[!] CRITICAL ERROR: Root filesystem (/) is mounted READ-ONLY.\x1b[0m"
+            );
             eprintln!("\x1b[31m[!] خطا: فایل‌سیستم ریشه به صورت فقط-خواندنی سوار شده است.\x1b[0m\n");
             return Err("Aborted: read-only root mount.".to_string());
         }
@@ -55,7 +57,10 @@ impl Executor {
 
         match SafetyGuard::evaluate_command_safety(&binary, &args) {
             DangerLevel::Blocked(reason) => {
-                eprintln!("\n\x1b[1;31m[!] DANGEROUS OPERATION BLOCKED: {}\x1b[0m\n", reason);
+                eprintln!(
+                    "\n\x1b[1;31m[!] DANGEROUS OPERATION BLOCKED: {}\x1b[0m\n",
+                    reason
+                );
                 return Err("Execution aborted for system safety.".to_string());
             }
             DangerLevel::Warning(w) => {
@@ -90,7 +95,11 @@ impl Executor {
             return Ok(());
         }
 
-        println!("\x1b[1;33m[!] Found {} orphaned package(s): {}\x1b[0m\n", orphans.len(), orphans.join(" "));
+        println!(
+            "\x1b[1;33m[!] Found {} orphaned package(s): {}\x1b[0m\n",
+            orphans.len(),
+            orphans.join(" ")
+        );
 
         let mut args = vec!["-Rns".to_string()];
         if noconfirm {

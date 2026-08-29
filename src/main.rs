@@ -69,7 +69,11 @@ fn main() {
         UserAction::Execute(custom_cmd) => {
             if custom_cmd != res.command {
                 res.command = custom_cmd;
-                let parts: Vec<String> = res.command.split_whitespace().map(|s| s.to_string()).collect();
+                let parts: Vec<String> = res
+                    .command
+                    .split_whitespace()
+                    .map(|s| s.to_string())
+                    .collect();
                 if !parts.is_empty() {
                     res.exec_binary = parts[0].clone();
                     res.exec_args = parts[1..].to_vec();

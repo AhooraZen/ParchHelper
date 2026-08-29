@@ -32,7 +32,10 @@ fn test_apt_get_typo_handling() {
 
 #[test]
 fn test_apt_install_with_mapping() {
-    let ctx = test_ctx(SourceManager::Apt, &["install", "build-essential", "libssl-dev"]);
+    let ctx = test_ctx(
+        SourceManager::Apt,
+        &["install", "build-essential", "libssl-dev"],
+    );
     let cfg = Config::default();
     let res = translate(&ctx, &cfg);
     assert_eq!(res.command, "paru -S base-devel openssl");
@@ -57,7 +60,10 @@ fn test_dnf_upgrade() {
 
 #[test]
 fn test_dnf_install_mapping() {
-    let ctx = test_ctx(SourceManager::Dnf, &["install", "-y", "gcc-c++", "openssl-devel"]);
+    let ctx = test_ctx(
+        SourceManager::Dnf,
+        &["install", "-y", "gcc-c++", "openssl-devel"],
+    );
     let cfg = Config::default();
     let res = translate(&ctx, &cfg);
     assert_eq!(res.command, "paru -S --noconfirm gcc openssl");

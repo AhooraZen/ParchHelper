@@ -132,14 +132,20 @@ impl InvocationContext {
         let mut source = SourceManager::from_name(&prog_name);
 
         if let SourceManager::Unknown(ref s) = source {
-            if (s.contains("parch-helper") || s.contains("parch-translate")) && !pass_args.is_empty() {
+            if (s.contains("parch-helper") || s.contains("parch-translate"))
+                && !pass_args.is_empty()
+            {
                 source = SourceManager::from_name(&pass_args[0]);
                 pass_args.remove(0);
             }
         }
 
         let is_sudo = is_root();
-        let sudo_user = if is_sudo { Self::resolve_sudo_target_user() } else { None };
+        let sudo_user = if is_sudo {
+            Self::resolve_sudo_target_user()
+        } else {
+            None
+        };
         let is_interactive = if cli_opts.force_interactive {
             true
         } else {
@@ -159,7 +165,9 @@ impl InvocationContext {
     }
 
     fn resolve_sudo_target_user() -> Option<UserIdentity> {
-        let sudo_uid = env::var("SUDO_UID").ok().and_then(|s| s.parse::<u32>().ok());
+        let sudo_uid = env::var("SUDO_UID")
+            .ok()
+            .and_then(|s| s.parse::<u32>().ok());
         if let Some(uid) = sudo_uid {
             if uid != 0 {
                 #[cfg(unix)]

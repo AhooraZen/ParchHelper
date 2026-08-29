@@ -13,9 +13,20 @@ pub fn translate_brew(args: &[String], config: &Config) -> TranslationResult {
             } else {
                 format!("{} -Syu", helper)
             },
-            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
-            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Syu".to_string()] } else { vec!["-Syu".to_string()] },
-            op: PacmanOp::SyncUpgrade { noconfirm: false, download_only: false },
+            exec_binary: if helper == "pacman" {
+                "sudo".to_string()
+            } else {
+                helper.clone()
+            },
+            exec_args: if helper == "pacman" {
+                vec!["pacman".to_string(), "-Syu".to_string()]
+            } else {
+                vec!["-Syu".to_string()]
+            },
+            op: PacmanOp::SyncUpgrade {
+                noconfirm: false,
+                download_only: false,
+            },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
             notes_en: "Running system upgrade (Homebrew 'brew' -> Arch 'pacman').".to_string(),
@@ -34,14 +45,24 @@ pub fn translate_brew(args: &[String], config: &Config) -> TranslationResult {
             } else {
                 format!("{} -Sy", helper)
             },
-            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
-            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Sy".to_string()] } else { vec!["-Sy".to_string()] },
+            exec_binary: if helper == "pacman" {
+                "sudo".to_string()
+            } else {
+                helper.clone()
+            },
+            exec_args: if helper == "pacman" {
+                vec!["pacman".to_string(), "-Sy".to_string()]
+            } else {
+                vec!["-Sy".to_string()]
+            },
             op: PacmanOp::SyncRefresh { force: false },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
             notes_en: "Updates package database.".to_string(),
             notes_fa: "به‌روزرسانی لیست مخازن.".to_string(),
-            warning: Some("Warning: Running -Sy without upgrade can lead to broken packages.".to_string()),
+            warning: Some(
+                "Warning: Running -Sy without upgrade can lead to broken packages.".to_string(),
+            ),
         },
         "upgrade" => TranslationResult {
             command: if helper == "pacman" {
@@ -49,9 +70,20 @@ pub fn translate_brew(args: &[String], config: &Config) -> TranslationResult {
             } else {
                 format!("{} -Syu", helper)
             },
-            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
-            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Syu".to_string()] } else { vec!["-Syu".to_string()] },
-            op: PacmanOp::SyncUpgrade { noconfirm: false, download_only: false },
+            exec_binary: if helper == "pacman" {
+                "sudo".to_string()
+            } else {
+                helper.clone()
+            },
+            exec_args: if helper == "pacman" {
+                vec!["pacman".to_string(), "-Syu".to_string()]
+            } else {
+                vec!["-Syu".to_string()]
+            },
+            op: PacmanOp::SyncUpgrade {
+                noconfirm: false,
+                download_only: false,
+            },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
             notes_en: "Full package and system upgrade.".to_string(),
@@ -106,7 +138,11 @@ pub fn translate_brew(args: &[String], config: &Config) -> TranslationResult {
             }
         }
         "uninstall" | "remove" => {
-            let pkgs: Vec<String> = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect();
+            let pkgs: Vec<String> = rest
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .cloned()
+                .collect();
             TranslationResult {
                 command: format!("sudo pacman -Rns {}", pkgs.join(" ")),
                 exec_binary: "sudo".to_string(),
@@ -130,7 +166,12 @@ pub fn translate_brew(args: &[String], config: &Config) -> TranslationResult {
             }
         }
         "search" => {
-            let query = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect::<Vec<_>>().join(" ");
+            let query = rest
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(" ");
             let full_cmd = if helper == "pacman" {
                 format!("pacman -Ss {}", query)
             } else {
@@ -179,7 +220,9 @@ pub fn translate_brew(args: &[String], config: &Config) -> TranslationResult {
             command: format!("pacman -S {}", other),
             exec_binary: "pacman".to_string(),
             exec_args: vec!["-S".to_string(), other.to_string()],
-            op: PacmanOp::DirectPacman { args: vec!["-S".to_string(), other.to_string()] },
+            op: PacmanOp::DirectPacman {
+                args: vec!["-S".to_string(), other.to_string()],
+            },
             needs_root: true,
             needs_aur: false,
             notes_en: format!("Attempting pacman operation for '{}'.", other),

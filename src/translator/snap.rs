@@ -29,9 +29,14 @@ pub fn translate_snap(args: &[String], config: &Config) -> TranslationResult {
             },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
-            notes_en: "System upgrade. Arch and Parch avoid Canonical Snap daemon overhead.".to_string(),
-            notes_fa: "به‌روزرسانی سیستم. در پارچ از اسنپ به دلیل کندی و مصرف منابع بالا استفاده نمی‌شود.".to_string(),
-            warning: Some("Snap daemon is not recommended on lightweight Arch/Parch systems.".to_string()),
+            notes_en: "System upgrade. Arch and Parch avoid Canonical Snap daemon overhead."
+                .to_string(),
+            notes_fa:
+                "به‌روزرسانی سیستم. در پارچ از اسنپ به دلیل کندی و مصرف منابع بالا استفاده نمی‌شود."
+                    .to_string(),
+            warning: Some(
+                "Snap daemon is not recommended on lightweight Arch/Parch systems.".to_string(),
+            ),
         };
     }
 
@@ -107,7 +112,9 @@ pub fn translate_snap(args: &[String], config: &Config) -> TranslationResult {
                     "نصب مستقیم از مخازن اصلی یا کاربران آرچ به جای Snap با استفاده از {}.",
                     helper
                 ),
-                warning: Some("Native packages do not mount loop devices or slow down boot time.".to_string()),
+                warning: Some(
+                    "Native packages do not mount loop devices or slow down boot time.".to_string(),
+                ),
             }
         }
         "remove" => {

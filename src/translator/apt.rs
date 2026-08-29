@@ -29,8 +29,10 @@ pub fn translate_apt(raw_args: &[String], config: &Config) -> TranslationResult 
             },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
-            notes_en: "Running pacman system upgrade. In Parch/Arch, pacman/paru manages packages.".to_string(),
-            notes_fa: "اجرای به‌روزرسانی کلی سیستم. در پارچ از پَک‌من یا پارو استفاده می‌شود.".to_string(),
+            notes_en: "Running pacman system upgrade. In Parch/Arch, pacman/paru manages packages."
+                .to_string(),
+            notes_fa: "اجرای به‌روزرسانی کلی سیستم. در پارچ از پَک‌من یا پارو استفاده می‌شود."
+                .to_string(),
             warning: None,
         };
     }

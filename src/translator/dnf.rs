@@ -13,13 +13,26 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
             } else {
                 format!("{} -Syu", helper)
             },
-            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
-            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Syu".to_string()] } else { vec!["-Syu".to_string()] },
-            op: PacmanOp::SyncUpgrade { noconfirm: false, download_only: false },
+            exec_binary: if helper == "pacman" {
+                "sudo".to_string()
+            } else {
+                helper.clone()
+            },
+            exec_args: if helper == "pacman" {
+                vec!["pacman".to_string(), "-Syu".to_string()]
+            } else {
+                vec!["-Syu".to_string()]
+            },
+            op: PacmanOp::SyncUpgrade {
+                noconfirm: false,
+                download_only: false,
+            },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
-            notes_en: "Running pacman system upgrade. In Parch, pacman/paru replaces DNF/YUM.".to_string(),
-            notes_fa: "اجرای به‌روزرسانی سیستم. در پارچ از پَک‌من یا پارو به جای DNF استفاده می‌شود.".to_string(),
+            notes_en: "Running pacman system upgrade. In Parch, pacman/paru replaces DNF/YUM."
+                .to_string(),
+            notes_fa: "اجرای به‌روزرسانی سیستم. در پارچ از پَک‌من یا پارو به جای DNF استفاده می‌شود."
+                .to_string(),
             warning: None,
         };
     }
@@ -32,7 +45,9 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
             command: "checkupdates".to_string(),
             exec_binary: "checkupdates".to_string(),
             exec_args: vec![],
-            op: PacmanOp::DirectPacman { args: vec!["checkupdates".to_string()] },
+            op: PacmanOp::DirectPacman {
+                args: vec!["checkupdates".to_string()],
+            },
             needs_root: false,
             needs_aur: false,
             notes_en: "Safely checks for available repository updates.".to_string(),
@@ -51,11 +66,15 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
 
             let full_cmd = if helper == "pacman" {
                 let mut c = format!("sudo pacman {}", flag);
-                if noconfirm { c.push_str(" --noconfirm"); }
+                if noconfirm {
+                    c.push_str(" --noconfirm");
+                }
                 c
             } else {
                 let mut c = format!("{} {}", helper, flag);
-                if noconfirm { c.push_str(" --noconfirm"); }
+                if noconfirm {
+                    c.push_str(" --noconfirm");
+                }
                 c
             };
 
@@ -72,7 +91,10 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
                 command: full_cmd,
                 exec_binary: binary.to_string(),
                 exec_args: final_args,
-                op: PacmanOp::SyncUpgrade { noconfirm, download_only },
+                op: PacmanOp::SyncUpgrade {
+                    noconfirm,
+                    download_only,
+                },
                 needs_root: helper == "pacman",
                 needs_aur: helper != "pacman",
                 notes_en: "Full system upgrade (repos + AUR).".to_string(),
@@ -97,7 +119,11 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
                 } else if !arg.starts_with('-') {
                     let clean_pkg = if let Some((base, _)) = arg.split_once('.') {
                         // e.g. pkg.x86_64 -> pkg
-                        if base.contains('-') || base.len() > 2 { base } else { arg.as_str() }
+                        if base.contains('-') || base.len() > 2 {
+                            base
+                        } else {
+                            arg.as_str()
+                        }
                     } else {
                         arg.as_str()
                     };
@@ -119,18 +145,40 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
                     op: PacmanOp::RpmExtract { files: pkgs },
                     needs_root: false,
                     needs_aur: true,
-                    notes_en: ".rpm files require extraction or finding native AUR packages.".to_string(),
-                    notes_fa: "فایل‌های .rpm باید با rpmextract استخراج شوند یا از مخزن AUR نصب گردند.".to_string(),
-                    warning: Some("Direct .rpm installation is not supported by pacman.".to_string()),
+                    notes_en: ".rpm files require extraction or finding native AUR packages."
+                        .to_string(),
+                    notes_fa:
+                        "فایل‌های .rpm باید با rpmextract استخراج شوند یا از مخزن AUR نصب گردند."
+                            .to_string(),
+                    warning: Some(
+                        "Direct .rpm installation is not supported by pacman.".to_string(),
+                    ),
                 };
             }
 
             if pkgs.is_empty() {
                 return TranslationResult {
-                    command: if helper == "pacman" { "sudo pacman -S".to_string() } else { format!("{} -S", helper) },
-                    exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
-                    exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-S".to_string()] } else { vec!["-S".to_string()] },
-                    op: PacmanOp::SyncInstall { pkgs: vec![], noconfirm: false, as_deps: false, download_only: false },
+                    command: if helper == "pacman" {
+                        "sudo pacman -S".to_string()
+                    } else {
+                        format!("{} -S", helper)
+                    },
+                    exec_binary: if helper == "pacman" {
+                        "sudo".to_string()
+                    } else {
+                        helper.clone()
+                    },
+                    exec_args: if helper == "pacman" {
+                        vec!["pacman".to_string(), "-S".to_string()]
+                    } else {
+                        vec!["-S".to_string()]
+                    },
+                    op: PacmanOp::SyncInstall {
+                        pkgs: vec![],
+                        noconfirm: false,
+                        as_deps: false,
+                        download_only: false,
+                    },
                     needs_root: helper == "pacman",
                     needs_aur: helper != "pacman",
                     notes_en: "Pacman install command.".to_string(),
@@ -186,7 +234,11 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
             }
         }
         "remove" | "erase" => {
-            let pkgs: Vec<String> = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect();
+            let pkgs: Vec<String> = rest
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .cloned()
+                .collect();
             let noconfirm = rest.iter().any(|a| a == "-y" || a == "--assumeyes");
 
             let mut exec_args = vec!["-Rns".to_string()];
@@ -242,7 +294,12 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
             }
         }
         "search" => {
-            let query = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect::<Vec<_>>().join(" ");
+            let query = rest
+                .iter()
+                .filter(|a| !a.starts_with('-'))
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(" ");
             let full_cmd = if helper == "pacman" {
                 format!("pacman -Ss {}", query)
             } else {
@@ -296,7 +353,8 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
                 op: PacmanOp::FileSearch { query: file },
                 needs_root: false,
                 needs_aur: false,
-                notes_en: "Finds which package provides a specific file (requires 'pacman -Fy').".to_string(),
+                notes_en: "Finds which package provides a specific file (requires 'pacman -Fy')."
+                    .to_string(),
                 notes_fa: "پیدا کردن بسته‌ای که فایل مورد نظر را ارائه می‌دهد.".to_string(),
                 warning: None,
             }
@@ -305,7 +363,9 @@ pub fn translate_dnf(args: &[String], config: &Config) -> TranslationResult {
             command: format!("pacman -S {}", other),
             exec_binary: "pacman".to_string(),
             exec_args: vec!["-S".to_string(), other.to_string()],
-            op: PacmanOp::DirectPacman { args: vec!["-S".to_string(), other.to_string()] },
+            op: PacmanOp::DirectPacman {
+                args: vec!["-S".to_string(), other.to_string()],
+            },
             needs_root: true,
             needs_aur: false,
             notes_en: format!("Attempting pacman operation for '{}'.", other),

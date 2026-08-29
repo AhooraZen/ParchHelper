@@ -1,31 +1,87 @@
-name: Build & Test
+name: CI & Release
 
 on:
   push:
     branches: [ "main", "master" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  check-test:
+    name: Lint & Test
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: clippy, rustfmt
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
 
-    - name: Rustfmt Check
-      run: cargo fmt --all -- --check
+      - name: Rustfmt Check
+        run: cargo fmt --all -- --check
 
-    - name: Clippy Check
-      run: cargo clippy -- -D warnings
+      - name: Clippy Check
+        run: cargo clippy -- -D warnings
 
-    - name: Run Tests
-      run: cargo test --verbose
+      - name: Run Tests
+        run: cargo test --verbose
 
-    - name: Build Release Binary
-      run: cargo build --release --verbose
+  release:
+    name: Build & Publish Release
+    needs: check-test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Optimized Release Binary
+        run: cargo build --release
+
+      - name: Package Release Tarball
+        run: |
+          mkdir -p package/usr/bin package/etc/parch package/etc/profile.d package/usr/share/zsh/site-functions package/usr/share/fish/vendor_conf.d
+          cp target/release/parch-helper package/usr/bin/
+          cp config/helper.toml package/etc/parch/
+          cp shell/parch-helper.sh package/etc/profile.d/
+          cp shell/parch-helper.zsh package/usr/share/zsh/site-functions/
+          cp shell/parch-helper.fish package/usr/share/fish/vendor_conf.d/
+          tar -czf parch-helper-x86_64.tar.gz -C package .
+          cp target/release/parch-helper parch-helper-x86_64
+
+      - name: Create or Update Rolling Latest Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: ParchHelper Rolling Latest Release
+          draft: false
+          prerelease: false
+          files: |
+            parch-helper-x86_64.tar.gz
+            parch-helper-x86_64
+            config/helper.toml
+            shell/parch-helper.sh
+            shell/parch-helper.zsh
+            shell/parch-helper.fish
+
+      - name: Publish Version Tagged Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          files: |
+            parch-helper-x86_64.tar.gz
+            parch-helper-x86_64
+            config/helper.toml
+            shell/parch-helper.sh
+            shell/parch-helper.zsh
+            shell/parch-helper.fish

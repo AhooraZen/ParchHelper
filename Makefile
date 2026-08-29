@@ -7,16 +7,16 @@ SUDO := $(shell if [ "$$(id -u)" -ne 0 ]; then which sudo 2>/dev/null; fi)
 all: build
 
 build:
-	cargo build --release -j 1
+	cargo build --release
 
 test:
-	cargo test -j 1
+	cargo test
 
 # install target does NOT depend on build rule to prevent root from re-invoking cargo
 install:
 	@if [ ! -f target/release/parch-helper ]; then \
 		echo "Binary target/release/parch-helper not found! Running build as current user..."; \
-		cargo build --release -j 1; \
+		cargo build --release; \
 	fi
 	$(SUDO) install -Dm755 target/release/parch-helper $(DESTDIR)$(PREFIX)/bin/parch-helper
 	$(SUDO) ln -sf $(PREFIX)/bin/parch-helper $(DESTDIR)$(PREFIX)/bin/parch-translate

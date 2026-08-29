@@ -99,7 +99,10 @@ pub fn translate_flatpak(args: &[String], config: &Config) -> TranslationResult 
                     "پیشنهاد استفاده از بسته بومی آرچ/AUR با کارایی بالاتر از طریق {}.",
                     helper
                 ),
-                warning: Some("Native packages offer lower RAM overhead and seamless desktop integration.".to_string()),
+                warning: Some(
+                    "Native packages offer lower RAM overhead and seamless desktop integration."
+                        .to_string(),
+                ),
             }
         }
         "update" => TranslationResult {
