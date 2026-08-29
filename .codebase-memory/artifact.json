@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "0ba4a303a8c1edfcdf237986b5006ee7695ea373",
+    "indexed_at": "2026-08-29T21:14:04Z",
+    "project": "app-ParchHelper",
+    "nodes": 486,
+    "edges": 1095,
+    "original_size": 3080192,
+    "compressed_size": 318504,
+    "compression_level": 3
+}

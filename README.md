@@ -1,29 +1,38 @@
 # Parch Linux Command Helper (`parch-helper` / `parch-translate`)
 
 <p align="center">
-  <b>A lightweight, ultra-fast command translation and migration helper for Parch Linux & Arch-based distributions.</b><br>
-  <i>راهنمای هوشمند، بومی‌سازی شده و فوق‌سریع برای تبدیل دستورات دبیان، اوبونتو، فدورا، آلپاین و اوپن‌سوزه به آرچ/پارچ</i>
+  <b>Next-generation command translation, safety verification, and execution helper for Parch Linux & Arch-based distributions.</b><br>
+  <i>راهنمای هوشمند، فوق‌سریع و ایمن برای تبدیل دستورات دبیان، اوبونتو، فدورا، آلپاین، اوپن‌سوزه، مک، فلت‌پک و اسنپ به آرچ/پارچ</i>
 </p>
 
 ---
 
 ## 🚀 Features
 
-- ⚡ **Zero-Overhead & Native**: Written in Rust, single static binary, sub-2ms startup time with zero runtime dependencies.
-- 🔄 **Comprehensive Distro Interception**: Translates commands from:
+- ⚡ **Zero-Overhead & Native**: Single static Rust binary, sub-millisecond execution, zero background daemon overhead.
+- 🔄 **Multi-Distro & Container Interception**:
   - **Debian / Ubuntu**: `apt`, `apt-get`, `apt-cache`, `aptitude`, `dpkg`
   - **Fedora / RHEL / CentOS**: `dnf`, `yum`, `rpm`
   - **Alpine Linux**: `apk`
   - **openSUSE**: `zypper`
-  - **macOS**: `brew`
-- 📦 **Intelligent Package Normalization**: Automatically normalizes package names (e.g. `build-essential` -> `base-devel`, `libssl-dev` / `openssl-devel` -> `openssl`, `python3-pip` -> `python-pip`, `docker-ce` -> `docker`).
-- 🇮🇷 **Bilingual UI (English & Persian)**: High-contrast, beautifully styled ANSI box rendering with clear explanations.
-- 🛡️ **Privilege & Safety Guards**:
-  - Automatically drops root privileges via `su - $SUDO_USER -c` when executing AUR helpers (`paru`/`yay`) under `sudo`.
-  - Strips redundant `sudo` when already running under root.
-  - Warns against `/var/lib/pacman/db.lck` lock files.
-  - Blocks catastrophic deletion attempts on core packages (`glibc`, `systemd`, `linux`, `base`).
-- ⚡ **1-Click Execution**: Press `Enter` or `Y` to immediately run the translated command, or cancel gracefully with `n` / `Ctrl+C`.
+  - **macOS / Homebrew**: `brew`
+  - **Containers & Sandboxes**: `flatpak`, `snap` (guides users to native Arch/AUR packages)
+- 📦 **Comprehensive Package Normalization**: Extensive database mappings (`base-devel`, `openssl`, `python-*`, `docker`, `gtk3/4`, `mesa`, fonts) with smart suffix/prefix heuristics.
+- 🎨 **Adaptive Modern TUI**:
+  - Dynamic terminal width clamping (48–100 cols) to prevent line wrapping.
+  - Unicode BiDi text isolation for RTL (Persian / FA) rendering without border breaking.
+  - 5 Built-in themes: `neon`, `parch-dark`, `minimal`, `monokai`, `plain`.
+- ⌨️ **Interactive Controls**:
+  - `Enter` / `y`: Immediate execution.
+  - `c`: Instant clipboard copy via OSC-52 escape codes (works over SSH and tmux).
+  - `e`: In-place command editor.
+  - `q` / `n` / `Esc`: Clean abort.
+- 🛡️ **Hardened Safety & Privilege Engine**:
+  - POSIX credential drop (`setuid`/`setgid`/`initgroups`) for AUR helpers (`paru`/`yay`) under `sudo`.
+  - Read-only root filesystem detection (`statvfs`).
+  - Active pacman lock `/var/lib/pacman/db.lck` detection with process ID mapping and stale lock handling.
+  - AST-style dangerous command blocker (`rm -rf /`, cascade removals on `glibc`, `systemd`, `linux`, `base`, `pacman`).
+  - Native orphan cleanup without subshell expansion failures.
 
 ---
 
@@ -32,64 +41,62 @@
 ```text
 ╭─── ❬ Parch Linux Command Helper ❭ ───────────────────────────────────╮
 │                                                                      │
-│   Input        : apt install build-essential libssl-dev              │
-│   Arch/Parch   : paru -S base-devel openssl                          │
+│   Input        : apt install -y build-essential libssl-dev           │
+│   Arch/Parch   : paru -S --noconfirm base-devel openssl              │
 │                                                                      │
 │    EN   Installs package(s) via Arch repos / AUR (paru).             │
 │    FA   نصب بسته(ها) از طریق مخازن رسمی و مخزن کاربران (paru).       │
 │                                                                      │
 ╰──────────────────────────────────────────────────────────────────────╯
-╭─▶ Execute `paru -S base-devel openssl` ? [Y/n/c] ❯ 
+╭─▶ Execute `paru -S --noconfirm base-devel openssl` ? [Enter/y: Run | c: Copy | e: Edit | q: Abort] ❯ 
 ✔ Executing...
 ```
 
 ---
 
-## 🛠️ Installation & Building
+## 🛠️ CLI Flags & Options
 
-### 1. Quick Installer (Recommended)
-Clone the repo and run the standalone setup script:
-```bash
-git clone https://github.com/AhooraZen/ParchHelper.git
-cd ParchHelper
-sudo ./install.sh
-```
+```text
+Usage: parch-helper [OPTIONS] <COMMAND> [ARGS...]
 
-### 2. Manual Cargo Build
-```bash
-cargo build --release
-sudo install -Dm755 target/release/parch-helper /usr/bin/parch-helper
-sudo ln -sf /usr/bin/parch-helper /usr/bin/parch-translate
-```
-
-### 3. Arch Linux / Parch PKGBUILD
-Build and install via `makepkg`:
-```bash
-makepkg -si
+Options:
+  -e, --explain             Explain command without executing
+  -d, --dry-run             Print translated command and exit (no execution)
+  -y, --yes                 Auto-execute without interactive confirmation
+  -i, --interactive         Force interactive prompt even in non-TTY sessions
+  -j, --json                Output structured JSON translation metadata
+  -H, --helper <NAME>       Override helper (pacman | paru | yay)
+  -t, --theme <THEME>       Override theme (neon | parch-dark | minimal | monokai | plain)
+  -c, --config <PATH>       Load custom TOML configuration file
+  -h, --help                Show help information
 ```
 
 ---
 
 ## ⚙️ Configuration (`/etc/parch/helper.toml`)
 
-You can customize `parch-helper` behavior globally at `/etc/parch/helper.toml` or per-user at `~/.config/parch/helper.toml`:
-
 ```toml
 [general]
-# Target helper for system & AUR updates: "paru" | "yay" | "pacman"
+# Preferred package helper: "paru" | "yay" | "pacman"
 helper = "paru"
 
-# UI language display mode: "both" (EN+FA) | "en" | "fa"
+# Language mode: "both" (EN+FA) | "en" | "fa"
 language = "both"
 
-# Automatically execute without asking for interactive confirmation
+# UI Theme: "neon" | "parch-dark" | "minimal" | "monokai" | "plain"
+theme = "neon"
+
+# Auto-execute without confirmation prompt
 auto_execute = false
 
-# Enable colored ANSI borders and badges
+# Show colored UI box
 colored_ui = true
 
-# Allow AUR fallback suggestions
+# Check AUR automatically
 aur_fallback = true
+
+# Enable BiDi Unicode isolation for RTL text
+bidi_isolation = true
 
 [package_overrides]
 # Custom package mappings (foreign-pkg = "arch-pkg")
@@ -98,65 +105,11 @@ aur_fallback = true
 
 ---
 
-## 📖 Architecture & Maintainer Guide
+## 🧪 Testing & Verification
 
-### Request & Execution Flow
-
-```text
-User Command (e.g. 'sudo apt update' or 'dnf install gcc-c++')
-   │
-   ▼
-1. Invocation Context (/src/context.rs)
-   ├── Inspects argv[0] to determine source manager (apt, dnf, apk, etc.)
-   ├── Parses remaining command-line arguments
-   ├── Detects TTY / interactive session
-   └── Checks root/EUID status and extracts SUDO_USER
-   │
-   ▼
-2. Translation Engine (/src/translator/)
-   ├── Handles typos & subcommands (e.g., 'apt get upgrade' -> 'upgrade')
-   ├── Applies package name dictionary (/data/pkg_mappings.json) & heuristics
-   ├── Translates flags (-y -> --noconfirm)
-   └── Builds TranslationResult with English & Persian notes
-   │
-   ▼
-3. UI Renderer (/src/ui/)
-   ├── Renders formatted ANSI box
-   └── Prompts user for 1-click execution
-   │
-   ▼
-4. Executor & Safety Layer (/src/executor.rs)
-   ├── Checks /var/lib/pacman/db.lck lockfile
-   ├── Evaluates safety guards
-   ├── Drops privileges to $SUDO_USER for AUR helpers
-   └── Executes translated command
-```
-
-### Command Translation Matrix
-
-| Distro Command | Translated Parch/Arch Command | Description |
-| :--- | :--- | :--- |
-| `apt update` / `dnf check-update` | `paru -Sy` / `sudo pacman -Sy` | Refresh repository databases |
-| `apt upgrade` / `dnf upgrade` | `paru -Syu` / `sudo pacman -Syu` | Full system & AUR upgrade |
-| `apt install <pkg>` / `dnf install <pkg>` | `paru -S <pkg>` | Install package (+ auto-name mapping) |
-| `apt remove <pkg>` / `apk del <pkg>` | `sudo pacman -R <pkg>` / `paru -R` | Remove package |
-| `apt purge <pkg>` / `dnf erase <pkg>` | `sudo pacman -Rns <pkg>` | Remove package, unused deps & config |
-| `apt autoremove` / `dnf autoremove` | `sudo pacman -Rns $(pacman -Qtdq)` | Remove orphaned dependencies |
-| `apt search <query>` / `dnf search` | `paru -Ss <query>` | Search package database |
-| `apt show <pkg>` / `dnf info <pkg>` | `pacman -Si <pkg>` | View package metadata & dependencies |
-| `apt list --installed` | `pacman -Qe` | List explicitly installed packages |
-| `apt clean` / `dnf clean all` | `sudo pacman -Sc` | Clean cached package tarballs |
-| `apt-file search <f>` / `dnf provides <f>` | `pacman -F <f>` | Find which package owns a specific file |
-| `dpkg -i <file.deb>` | `debtap <file.deb>` | Suggest deb package conversion |
-| `rpm -i <file.rpm>` | `rpmextract <file.rpm>` | Suggest rpm archive extraction |
-
----
-
-## 🧪 Testing
-
-Run all unit tests locally:
+Run tests with low-memory single-CPU flag:
 ```bash
-cargo test
+cargo test -j 1
 ```
 
 ---

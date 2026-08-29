@@ -1,9 +1,9 @@
 [package]
 name = "parch-helper"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Parch Linux Developers <dev@parchlinux.com>"]
-description = "Distro command translation and migration helper for Parch Linux (Arch-based)"
+description = "Next-generation distro command translation, safety verification, and execution helper for Parch Linux (Arch-based)"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/AhooraZen/ParchHelper"
 readme = "README.md"
@@ -17,6 +17,9 @@ toml = "0.8"
 colored = "2.1"
 is-terminal = "0.4"
 libc = "0.2"
+crossterm = "0.28"
+unicode-width = "0.2"
+base64 = "0.22"
 
 [profile.release]
 opt-level = 3

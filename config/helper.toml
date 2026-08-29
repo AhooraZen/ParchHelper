@@ -8,6 +8,9 @@ helper = "paru"
 # Language mode: "both" (EN+FA) | "en" | "fa" | "auto"
 language = "both"
 
+# UI Theme: "neon" | "parch-dark" | "minimal" | "monokai" | "plain"
+theme = "neon"
+
 # Auto-execute without confirmation prompt
 auto_execute = false
 
@@ -17,6 +20,10 @@ colored_ui = true
 # Check AUR automatically if package not found in official repos
 aur_fallback = true
 
+# Enable BiDi Unicode isolation for Persian / RTL text rendering
+bidi_isolation = true
+
 [package_overrides]
 # Custom package mappings (overrides built-in dictionary)
 # "debian-pkg-name" = "arch-pkg-name"
+# "build-essential" = "base-devel"

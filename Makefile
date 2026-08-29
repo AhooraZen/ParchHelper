@@ -4,10 +4,10 @@ DESTDIR ?=
 all: build
 
 build:
-	cargo build --release
+	cargo build --release -j 1
 
 test:
-	cargo test
+	cargo test -j 1
 
 install: build
 	install -Dm755 target/release/parch-helper $(DESTDIR)$(PREFIX)/bin/parch-helper

@@ -2,7 +2,7 @@
 set -e
 
 echo "==> Building Parch Linux Command Helper..."
-cargo build --release
+cargo build --release -j 1
 
 echo "==> Installing binary to /usr/bin/parch-helper..."
 sudo install -Dm755 "target/release/parch-helper" "/usr/bin/parch-helper"
@@ -19,7 +19,7 @@ sudo mkdir -p "/etc/profile.d"
 sudo cp "shell/parch-helper.sh" "/etc/profile.d/parch-helper.sh"
 
 echo "==> Creating seamless command symlinks (apt, dnf, apk, etc.)..."
-for cmd in apt apt-get apt-cache dnf yum apk zypper; do
+for cmd in apt apt-get apt-cache aptitude dnf yum apk zypper brew dpkg rpm flatpak snap; do
     if [ ! -f "/usr/bin/$cmd" ] || [ -L "/usr/bin/$cmd" ]; then
         sudo ln -sf "/usr/bin/parch-helper" "/usr/bin/$cmd"
     fi

@@ -1,15 +1,23 @@
-use super::TranslationResult;
+use super::mapper::PkgMappings;
+use super::{PacmanOp, TranslationResult};
 use crate::config::Config;
 
 pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
     let helper = &config.general.helper;
+    let mappings = PkgMappings::global();
 
     if args.is_empty() {
         return TranslationResult {
-            command: "sudo pacman -Syu".to_string(),
-            args: vec!["-Syu".to_string()],
-            needs_root: true,
-            needs_aur: false,
+            command: if helper == "pacman" {
+                "sudo pacman -Syu".to_string()
+            } else {
+                format!("{} -Syu", helper)
+            },
+            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
+            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Syu".to_string()] } else { vec!["-Syu".to_string()] },
+            op: PacmanOp::SyncUpgrade { noconfirm: false, download_only: false },
+            needs_root: helper == "pacman",
+            needs_aur: helper != "pacman",
             notes_en: "Running system upgrade (Alpine 'apk' -> Arch 'pacman').".to_string(),
             notes_fa: "اجرای ارتقای سیستم (تبدیل دستور apk آلپاین به پَک‌من).".to_string(),
             warning: None,
@@ -21,17 +29,29 @@ pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
 
     match subcmd.as_str() {
         "update" => TranslationResult {
-            command: "sudo pacman -Sy".to_string(),
-            args: vec!["-Sy".to_string()],
-            needs_root: true,
-            needs_aur: false,
+            command: if helper == "pacman" {
+                "sudo pacman -Sy".to_string()
+            } else {
+                format!("{} -Sy", helper)
+            },
+            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
+            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Sy".to_string()] } else { vec!["-Sy".to_string()] },
+            op: PacmanOp::SyncRefresh { force: false },
+            needs_root: helper == "pacman",
+            needs_aur: helper != "pacman",
             notes_en: "Refreshes package database.".to_string(),
             notes_fa: "به‌روزرسانی اطلاعات مخازن.".to_string(),
-            warning: None,
+            warning: Some("Warning: Running -Sy without upgrading risks partial upgrades.".to_string()),
         },
         "upgrade" => TranslationResult {
-            command: if helper == "pacman" { "sudo pacman -Syu".to_string() } else { format!("{} -Syu", helper) },
-            args: vec!["-Syu".to_string()],
+            command: if helper == "pacman" {
+                "sudo pacman -Syu".to_string()
+            } else {
+                format!("{} -Syu", helper)
+            },
+            exec_binary: if helper == "pacman" { "sudo".to_string() } else { helper.clone() },
+            exec_args: if helper == "pacman" { vec!["pacman".to_string(), "-Syu".to_string()] } else { vec!["-Syu".to_string()] },
+            op: PacmanOp::SyncUpgrade { noconfirm: false, download_only: false },
             needs_root: helper == "pacman",
             needs_aur: helper != "pacman",
             notes_en: "Full system upgrade.".to_string(),
@@ -39,19 +59,58 @@ pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
             warning: None,
         },
         "add" => {
-            let pkgs: Vec<String> = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect();
+            let mut pkgs = Vec::new();
+            let mut noconfirm = false;
+
+            for arg in rest {
+                if arg == "--no-cache" || arg == "-q" || arg == "--quiet" {
+                    // ignore cache bypass flags in pacman
+                } else if arg == "-y" {
+                    noconfirm = true;
+                } else if !arg.starts_with('-') {
+                    let mapped = if let Some(custom) = config.package_overrides.get(arg) {
+                        custom.clone()
+                    } else {
+                        mappings.translate_alpine_pkg(arg)
+                    };
+                    pkgs.push(mapped);
+                }
+            }
+
+            let mut exec_args = vec!["-S".to_string()];
+            if noconfirm {
+                exec_args.push("--noconfirm".to_string());
+            }
+            exec_args.extend(pkgs.clone());
+
             let full_cmd = if helper == "pacman" {
-                format!("sudo pacman -S {}", pkgs.join(" "))
+                let mut c = format!("sudo pacman -S {}", pkgs.join(" "));
+                if noconfirm { c.push_str(" --noconfirm"); }
+                c
             } else {
-                format!("{} -S {}", helper, pkgs.join(" "))
+                let mut c = format!("{} -S {}", helper, pkgs.join(" "));
+                if noconfirm { c.push_str(" --noconfirm"); }
+                c
+            };
+
+            let binary = if helper == "pacman" { "sudo" } else { helper };
+            let final_args = if helper == "pacman" {
+                let mut a = vec!["pacman".to_string()];
+                a.extend(exec_args);
+                a
+            } else {
+                exec_args
             };
 
             TranslationResult {
                 command: full_cmd,
-                args: {
-                    let mut a = vec!["-S".to_string()];
-                    a.extend(pkgs);
-                    a
+                exec_binary: binary.to_string(),
+                exec_args: final_args,
+                op: PacmanOp::SyncInstall {
+                    pkgs,
+                    noconfirm,
+                    as_deps: false,
+                    download_only: false,
                 },
                 needs_root: helper == "pacman",
                 needs_aur: helper != "pacman",
@@ -64,10 +123,18 @@ pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
             let pkgs: Vec<String> = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect();
             TranslationResult {
                 command: format!("sudo pacman -Rns {}", pkgs.join(" ")),
-                args: {
-                    let mut a = vec!["-Rns".to_string()];
-                    a.extend(pkgs);
+                exec_binary: "sudo".to_string(),
+                exec_args: {
+                    let mut a = vec!["pacman".to_string(), "-Rns".to_string()];
+                    a.extend(pkgs.clone());
                     a
+                },
+                op: PacmanOp::Remove {
+                    pkgs,
+                    noconfirm: false,
+                    cascade: false,
+                    nosave: true,
+                    recursive: true,
                 },
                 needs_root: true,
                 needs_aur: false,
@@ -77,15 +144,19 @@ pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
             }
         }
         "search" => {
-            let query = rest.join(" ");
+            let query = rest.iter().filter(|a| !a.starts_with('-')).cloned().collect::<Vec<_>>().join(" ");
             let full_cmd = if helper == "pacman" {
                 format!("pacman -Ss {}", query)
             } else {
                 format!("{} -Ss {}", helper, query)
             };
+            let binary = if helper == "pacman" { "pacman" } else { helper };
+
             TranslationResult {
                 command: full_cmd,
-                args: vec!["-Ss".to_string(), query],
+                exec_binary: binary.to_string(),
+                exec_args: vec!["-Ss".to_string(), query.clone()],
+                op: PacmanOp::SyncSearch { query },
                 needs_root: false,
                 needs_aur: helper != "pacman",
                 notes_en: "Searches package database.".to_string(),
@@ -97,7 +168,9 @@ pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
             let pkg = rest.first().cloned().unwrap_or_default();
             TranslationResult {
                 command: format!("pacman -Si {}", pkg),
-                args: vec!["-Si".to_string(), pkg],
+                exec_binary: "pacman".to_string(),
+                exec_args: vec!["-Si".to_string(), pkg.clone()],
+                op: PacmanOp::SyncInfo { pkg },
                 needs_root: false,
                 needs_aur: false,
                 notes_en: "Shows package info.".to_string(),
@@ -107,7 +180,9 @@ pub fn translate_apk(args: &[String], config: &Config) -> TranslationResult {
         }
         other => TranslationResult {
             command: format!("pacman -S {}", other),
-            args: vec!["-S".to_string(), other.to_string()],
+            exec_binary: "pacman".to_string(),
+            exec_args: vec!["-S".to_string(), other.to_string()],
+            op: PacmanOp::DirectPacman { args: vec!["-S".to_string(), other.to_string()] },
             needs_root: true,
             needs_aur: false,
             notes_en: format!("Attempting pacman operation for '{}'.", other),

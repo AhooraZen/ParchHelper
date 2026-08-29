@@ -7,13 +7,24 @@ static MAPPINGS: OnceLock<PkgMappings> = OnceLock::new();
 
 #[derive(Debug, serde::Deserialize)]
 struct RawMappings {
+    #[serde(default)]
     debian_to_arch: HashMap<String, String>,
+    #[serde(default)]
     fedora_to_arch: HashMap<String, String>,
+    #[serde(default)]
+    alpine_to_arch: HashMap<String, String>,
+    #[serde(default)]
+    zypper_to_arch: HashMap<String, String>,
+    #[serde(default)]
+    brew_to_arch: HashMap<String, String>,
 }
 
 pub struct PkgMappings {
     pub debian: HashMap<String, String>,
     pub fedora: HashMap<String, String>,
+    pub alpine: HashMap<String, String>,
+    pub zypper: HashMap<String, String>,
+    pub brew: HashMap<String, String>,
 }
 
 impl PkgMappings {
@@ -22,10 +33,16 @@ impl PkgMappings {
             let raw: RawMappings = serde_json::from_str(MAPPINGS_JSON).unwrap_or(RawMappings {
                 debian_to_arch: HashMap::new(),
                 fedora_to_arch: HashMap::new(),
+                alpine_to_arch: HashMap::new(),
+                zypper_to_arch: HashMap::new(),
+                brew_to_arch: HashMap::new(),
             });
             PkgMappings {
                 debian: raw.debian_to_arch,
                 fedora: raw.fedora_to_arch,
+                alpine: raw.alpine_to_arch,
+                zypper: raw.zypper_to_arch,
+                brew: raw.brew_to_arch,
             }
         })
     }
@@ -70,6 +87,51 @@ impl PkgMappings {
         }
         if name.starts_with("python3-") {
             return format!("python-{}", &name[8..]);
+        }
+
+        name.to_string()
+    }
+
+    pub fn translate_alpine_pkg(&self, name: &str) -> String {
+        if let Some(target) = self.alpine.get(name) {
+            return target.clone();
+        }
+
+        if name.starts_with("py3-") {
+            return format!("python-{}", &name[4..]);
+        }
+        if name.ends_with("-dev") {
+            let inner = &name[..name.len() - 4];
+            return inner.to_string();
+        }
+
+        name.to_string()
+    }
+
+    pub fn translate_zypper_pkg(&self, name: &str) -> String {
+        if let Some(target) = self.zypper.get(name) {
+            return target.clone();
+        }
+
+        if name.ends_with("-devel") {
+            let inner = &name[..name.len() - 6];
+            return inner.to_string();
+        }
+
+        name.to_string()
+    }
+
+    pub fn translate_brew_pkg(&self, name: &str) -> String {
+        if let Some(target) = self.brew.get(name) {
+            return target.clone();
+        }
+
+        // Strip version suffix e.g. python@3.11 -> python
+        if let Some((base, _)) = name.split_once('@') {
+            if let Some(target) = self.brew.get(base) {
+                return target.clone();
+            }
+            return base.to_string();
         }
 
         name.to_string()

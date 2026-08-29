@@ -20,8 +20,12 @@ pub struct GeneralConfig {
     pub auto_execute: bool,
     #[serde(default = "default_true")]
     pub colored_ui: bool,
+    #[serde(default = "default_theme")]
+    pub theme: String,
     #[serde(default = "default_true")]
     pub aur_fallback: bool,
+    #[serde(default = "default_true")]
+    pub bidi_isolation: bool,
 }
 
 fn default_helper() -> String {
@@ -30,6 +34,10 @@ fn default_helper() -> String {
 
 fn default_language() -> String {
     "both".to_string()
+}
+
+fn default_theme() -> String {
+    "neon".to_string()
 }
 
 fn default_true() -> bool {
@@ -44,7 +52,9 @@ impl Default for Config {
                 language: default_language(),
                 auto_execute: false,
                 colored_ui: true,
+                theme: default_theme(),
                 aur_fallback: true,
+                bidi_isolation: true,
             },
             package_overrides: HashMap::new(),
         }
@@ -53,6 +63,21 @@ impl Default for Config {
 
 impl Config {
     pub fn load() -> Self {
+        Self::load_from_path(None)
+    }
+
+    pub fn load_from_path(custom: Option<&str>) -> Self {
+        if let Some(custom_file) = custom {
+            let path = PathBuf::from(custom_file);
+            if path.exists() {
+                if let Ok(content) = fs::read_to_string(&path) {
+                    if let Ok(cfg) = toml::from_str(&content) {
+                        return cfg;
+                    }
+                }
+            }
+        }
+
         let user_config = dirs_config_path();
         if let Some(path) = user_config {
             if path.exists() {
