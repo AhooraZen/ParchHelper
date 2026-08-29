@@ -142,12 +142,18 @@ jobs:
           echo "commit_title=${COMMIT_TITLE}" >> $GITHUB_OUTPUT
           echo "commit_date=${COMMIT_DATE}" >> $GITHUB_OUTPUT
 
+      - name: Update Latest Git Tag Pointer
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git tag -f latest ${{ github.sha }}
+          git push -f origin latest
+
       - name: Publish Rolling Latest Release (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          target_commitish: ${{ github.sha }}
+          make_latest: "true"
           name: "ParchHelper (${{ steps.meta.outputs.short_sha }}) • ${{ steps.meta.outputs.commit_date }}"
           body: |
             ### ⚡ Rolling Build (`${{ steps.meta.outputs.short_sha }}`)
@@ -178,6 +184,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: "ParchHelper ${{ github.ref_name }}"
+          make_latest: "legacy"
           body: |
             Official release for Parch Linux.
 
