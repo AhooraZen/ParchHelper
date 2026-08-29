@@ -3,9 +3,24 @@ name: CI & Release Pipeline
 on:
   push:
     branches: [ "main", "master" ]
+    paths:
+      - "src/**"
+      - "data/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Makefile"
+      - "shell/**"
+      - "config/**"
+      - ".github/workflows/ci.yml"
     tags: [ "v*" ]
   pull_request:
     branches: [ "main", "master" ]
+    paths:
+      - "src/**"
+      - "data/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Makefile"
 
 permissions:
   contents: write
@@ -42,9 +57,10 @@ jobs:
       - name: Execute Unit & Integration Tests
         run: cargo test --all-targets
 
-  build-matrix:
-    name: Multi-Arch Build (${{ matrix.target }})
+  publish-release:
+    name: Build & Publish Release (${{ github.ref_name }})
     needs: code-quality
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -59,6 +75,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -77,7 +95,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq gcc-aarch64-linux-gnu libc6-dev-arm64-cross
 
-      - name: Build Binary (Native / Cross)
+      - name: Build Release Binary
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
         run: cargo build --release --target ${{ matrix.target }}
@@ -99,7 +117,7 @@ jobs:
           sha256sum "parch-helper-${{ matrix.arch_name }}.tar.gz" > "parch-helper-${{ matrix.arch_name }}.tar.gz.sha256"
           sha256sum "parch-helper-${{ matrix.arch_name }}" > "parch-helper-${{ matrix.arch_name }}.sha256"
 
-      - name: Upload Artifacts
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.arch_name }}
@@ -109,10 +127,10 @@ jobs:
             parch-helper-${{ matrix.arch_name }}
             parch-helper-${{ matrix.arch_name }}.sha256
 
-  publish-release:
-    name: Publish Release Assets
-    needs: build-matrix
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+  create-github-release:
+    name: Create GitHub Release
+    needs: publish-release
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -132,59 +150,10 @@ jobs:
           sha256sum parch-helper-*.tar.gz > SHA256SUMS
           cat SHA256SUMS
 
-      - name: Compute Release Metadata
-        id: meta
-        run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          COMMIT_TITLE=$(git log -1 --pretty=%s)
-          COMMIT_DATE=$(git log -1 --date=format:'%Y-%m-%d %H:%M UTC' --pretty=%cd)
-          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "commit_title=${COMMIT_TITLE}" >> $GITHUB_OUTPUT
-          echo "commit_date=${COMMIT_DATE}" >> $GITHUB_OUTPUT
-
-      - name: Update Latest Git Tag Pointer
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git tag -f latest ${{ github.sha }}
-          git push -f origin latest
-
-      - name: Publish Rolling Latest Release (main)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          make_latest: "true"
-          name: "ParchHelper (${{ steps.meta.outputs.short_sha }}) • ${{ steps.meta.outputs.commit_date }}"
-          body: |
-            ### ⚡ Rolling Build (`${{ steps.meta.outputs.short_sha }}`)
-            - **Commit:** `${{ github.sha }}`
-            - **Summary:** ${{ steps.meta.outputs.commit_title }}
-            - **Built on:** ${{ steps.meta.outputs.commit_date }}
-
-            ### 📦 Quick Install
-            ```bash
-            curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sudo bash
-            ```
-
-            ### 🛡️ Verification
-            See attached `SHA256SUMS` file for sha256 checksums.
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          files: |
-            release-assets/*
-            CHANGELOG.md
-            config/helper.toml
-            shell/parch-helper.sh
-            shell/parch-helper.zsh
-            shell/parch-helper.fish
-
-      - name: Publish Tagged Version Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish Official Tagged Release
         uses: softprops/action-gh-release@v2
         with:
           name: "ParchHelper ${{ github.ref_name }}"
-          make_latest: "legacy"
           body: |
             Official release for Parch Linux.
 
@@ -193,9 +162,10 @@ jobs:
             curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sudo bash
             ```
 
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed version history.
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for full release notes.
           draft: false
           prerelease: false
+          make_latest: "true"
           generate_release_notes: true
           files: |
             release-assets/*

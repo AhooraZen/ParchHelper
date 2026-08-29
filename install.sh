@@ -38,8 +38,8 @@ case "$ARCH" in
         ;;
 esac
 
-RELEASE_URL="https://github.com/${REPO}/releases/download/latest/parch-helper-${TARGET_ARCH}.tar.gz"
-BINARY_URL="https://github.com/${REPO}/releases/download/latest/parch-helper-${TARGET_ARCH}"
+RELEASE_URL="https://github.com/${REPO}/releases/latest/download/parch-helper-${TARGET_ARCH}.tar.gz"
+BINARY_URL="https://github.com/${REPO}/releases/latest/download/parch-helper-${TARGET_ARCH}"
 
 TEMP_DIR=$(mktemp -d)
 cleanup() {
